@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="FraudAI Detection & Explainability API",
     description="Sistema inteligente de detección de fraudes bancarios con RAG vectorial y explicabilidad local.",
-    version="0.1.0-beta"
+    version="0.1.0"
 )
 
 # Precarga de reglas de fraude al inicio del servicio
@@ -65,7 +65,7 @@ class FraudAnalysisResponse(BaseModel):
 def root():
     return {
         "service": "FraudAI Detection API",
-        "version": "0.1.0-beta",
+        "version": "0.1.0",
         "status": "ready",
         "models": {
             "embedding": EMBEDDING_MODEL_NAME,

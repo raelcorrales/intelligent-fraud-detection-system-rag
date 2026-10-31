@@ -1,6 +1,6 @@
 # Sistema Inteligente de Detección de Fraudes con RAG y LLM Local
 
-[![Release](https://img.shields.io/badge/Release-v0.1.0--beta-blue.svg)](https://github.com/)
+[![Release](https://img.shields.io/badge/Release-v0.1.0-blue.svg)](https://github.com/raelcorrales/intelligent-fraud-detection-system-rag/releases/tag/v0.1.0)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-green.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104%2B-teal.svg)](https://fastapi.tiangolo.com)
 [![Ollama](https://img.shields.io/badge/Ollama-Local_Inference-orange.svg)](https://ollama.com)
