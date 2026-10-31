@@ -1,57 +1,68 @@
-# src/fraud_detection_service/embedding_rule_utils.py
-
 import json
-import numpy as np
 import logging
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-# Asumiendo que EmbeddingManager ya está definido en src/fraud_detection_service/embedding_manager.py
-# y tiene un método get_embedding(text: str) -> np.ndarray
+from src.config import FRAUD_RULES_PATH, EMBEDDING_MODEL_NAME
 from src.fraud_detection_service.embedding_manager import EmbeddingManager
 
-# Creamos una instancia global (o pasamos una instancia) del EmbeddingManager
-# para evitar crearlo para cada llamada a load_and_embed_rules.
-# Es crucial que el model_name aquí coincida con el modelo de embedding de Ollama que has descargado
-# y que usas para generar embeddings de transacciones.
-_embedding_manager_instance: Optional[EmbeddingManager] = None
+logger = logging.getLogger(__name__)
 
-def get_embedding_manager_instance(model_name: str) -> EmbeddingManager:
+_cached_rules: Optional[List[Dict[str, Any]]] = None
+_embedding_manager: Optional[EmbeddingManager] = None
+
+def get_embedding_manager_instance(model_name: str = EMBEDDING_MODEL_NAME) -> EmbeddingManager:
+    """Retorna una instancia singleton de EmbeddingManager."""
+    global _embedding_manager
+    if _embedding_manager is None:
+        _embedding_manager = EmbeddingManager(model_name=model_name)
+    return _embedding_manager
+
+def load_and_embed_rules(
+    model_name: str = EMBEDDING_MODEL_NAME,
+    rules_file_path: Optional[str] = None,
+    force_reload: bool = False
+) -> List[Dict[str, Any]]:
     """
-    Retorna una instancia singleton de EmbeddingManager.
+    Carga las reglas de fraude desde el archivo JSON y calcula/adjunta
+    un vector de embedding normalizado para cada regla para habilitar RAG semántico real.
     """
-    global _embedding_manager_instance
-    if _embedding_manager_instance is None:
-        _embedding_manager_instance = EmbeddingManager(model_name=model_name)
-    return _embedding_manager_instance
+    global _cached_rules
+    if _cached_rules is not None and not force_reload:
+        return _cached_rules
 
+    path = Path(rules_file_path) if rules_file_path else FRAUD_RULES_PATH
 
-def load_and_embed_rules(model_name: str, rules_file_path: str) -> List[Dict[str, Any]]:
-    """
-    Carga las reglas de fraude desde un archivo JSON, genera un embedding para cada regla
-    utilizando Ollama y el EmbeddingManager, y añade el embedding al diccionario de la regla.
-
-    Args:
-        rules_file_path (str): Ruta al archivo JSON que contiene las reglas de fraude.
-
-    Returns:
-        List[Dict[str, Any]]: Una lista de diccionarios de reglas, cada uno con un
-                               campo 'embedding' adicional.
-    """
-    if not isinstance(rules_file_path, str) or not rules_file_path:
-        print("La ruta del archivo de reglas no es válida.")
+    if not path.exists():
+        logger.error(f"El archivo de reglas no existe en: {path}")
         return []
 
     try:
-        with open(rules_file_path, 'r', encoding='utf-8') as f:
-            rules = json.load(f)
-        print(f"Reglas cargadas exitosamente desde: {rules_file_path}")
-    except FileNotFoundError:
-        print(f"Error: El archivo de reglas no se encontró en '{rules_file_path}'.")
-        return []
-    except json.JSONDecodeError:
-        print(f"Error: No se pudo decodificar el JSON del archivo '{rules_file_path}'.")
-        return []
+        with open(path, "r", encoding="utf-8") as f:
+            raw_rules = json.load(f)
     except Exception as e:
-        print(f"Error inesperado al cargar las reglas: {e}")
+        logger.error(f"Error al leer reglas de {path}: {e}")
         return []
-    return rules
+
+    manager = get_embedding_manager_instance(model_name=model_name)
+    embedded_rules = []
+
+    logger.info(f"Generando embeddings vectoriales para {len(raw_rules)} reglas de fraude...")
+    for rule in raw_rules:
+        rule_copy = rule.copy()
+        keywords_str = ", ".join(rule.get("keywords", []))
+        tags_str = ", ".join(rule.get("tags", []))
+        
+        # Representación textual enriquecida para similitud semántica
+        rule_text = (
+            f"Regla: {rule.get('id', '')}. Descripción: {rule.get('description', '')}. "
+            f"Palabras clave: {keywords_str}. Tags: {tags_str}."
+        )
+        embedding = manager.get_embedding(rule_text)
+        rule_copy["embedding"] = embedding
+        rule_copy["semantic_text"] = rule_text
+        embedded_rules.append(rule_copy)
+
+    _cached_rules = embedded_rules
+    logger.info(f"Embeddings de reglas listos y cacheados exitosamente.")
+    return embedded_rules
