@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 class LLMExplainer(OllamaBase):
     """
-    Generador de explicaciones en lenguaje natural para analistas de fraude.
-    Combina generación contextual con Ollama LLM y un generador sintético estructurado
-    de respaldo para máxima disponibilidad en entornos de producción.
+    Natural language explanation generator for fraud analysts.
+    Combines contextual generation with Ollama LLM and a structured synthetic
+    generator fallback for high availability in production environments.
     """
     def __init__(
         self,
@@ -24,36 +24,36 @@ class LLMExplainer(OllamaBase):
 
     def _generate_fallback_explanation(self, transaction_details: str, fraud_context: Dict[str, Any]) -> str:
         """
-        Genera una explicación técnica rigurosa fundamentada en las reglas RAG activadas
-        cuando el servicio local de LLM no está accesible.
+        Generates a rigorous technical rationale grounded in activated RAG rules
+        when the local LLM service is offline or unreachable.
         """
         risk_level = fraud_context.get("risk_level", "HIGH")
-        tags = ", ".join(fraud_context.get("tags", ["Comportamiento Anómalo"]))
+        tags = ", ".join(fraud_context.get("tags", ["Anomalous Behavior"]))
         descriptions = fraud_context.get("rule_descriptions", [])
-        rules_str = " ".join(descriptions) if descriptions else "Se detectó desviación respecto al patrón habitual."
-        mitigations = fraud_context.get("mitigation_steps", ["Revisión manual por equipo de riesgo."])
+        rules_str = " ".join(descriptions) if descriptions else "Deviation detected from baseline behavior."
+        mitigations = fraud_context.get("mitigation_steps", ["Manual review by fraud risk operations team."])
         mitigations_str = "; ".join(mitigations)
 
         return (
-            f"Alerta de Fraude ({risk_level}): La transacción presenta patrones sospechosos etiquetados como [{tags}]. "
-            f"Fundamento de auditoría: {rules_str} "
-            f"Acciones de mitigación sugeridas: {mitigations_str}"
+            f"Fraud Alert ({risk_level}): Transaction exhibits anomalous patterns tagged as [{tags}]. "
+            f"Audit rationale: {rules_str} "
+            f"Recommended mitigation actions: {mitigations_str}"
         )
 
     def generate_explanation(self, transaction_details: str, fraud_context: Dict[str, Any]) -> str:
         """
-        Genera la justificación técnica en lenguaje natural sobre la alerta de fraude.
+        Generates a natural language technical audit report justifying the fraud alert.
         """
         if self.is_service_available():
             rules_context_str = "\n".join(fraud_context.get("rule_descriptions", []))
             prompt = (
-                "Eres un perito analista de riesgos en ciberseguridad financiera.\n"
-                "Genera una justificación técnica concisa (máximo 3 párrafos) explicando por qué esta transacción "
-                "fue clasificada como sospechosa, citando el contexto de reglas activadas y sugiriendo mitigaciones.\n\n"
-                f"🧾 DETALLES DE LA TRANSACCIÓN:\n{transaction_details}\n\n"
-                f"📚 REGLAS Y CONTEXTO RAG ACTIVADO:\n{rules_context_str}\n"
-                f"Nivel de Riesgo: {fraud_context.get('risk_level', 'HIGH')}\n\n"
-                "🔍 INFORME DE EVALUACIÓN:\n"
+                "You are an expert risk and financial cybersecurity analyst.\n"
+                "Provide a concise technical rationale (maximum 3 paragraphs) explaining why this transaction "
+                "was flagged as suspicious, citing the activated rules context and suggesting mitigation actions.\n\n"
+                f"🧾 TRANSACTION DETAILS:\n{transaction_details}\n\n"
+                f"📚 ACTIVATED RAG RULES CONTEXT:\n{rules_context_str}\n"
+                f"Risk Level: {fraud_context.get('risk_level', 'HIGH')}\n\n"
+                "🔍 EVALUATION REPORT:\n"
             )
 
             try:
@@ -65,6 +65,6 @@ class LLMExplainer(OllamaBase):
                 if generated_text:
                     return generated_text
             except Exception as e:
-                logger.warning(f"Fallo en generación con LLM ({e}). Empleando generador estructurado de respaldo.")
+                logger.warning(f"LLM generation failed ({e}). Employing structured fallback generator.")
 
         return self._generate_fallback_explanation(transaction_details, fraud_context)

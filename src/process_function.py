@@ -10,13 +10,13 @@ from src.fraud_detection_service.embedding_rule_utils import load_and_embed_rule
 
 logger = logging.getLogger(__name__)
 
-# Singletons en memoria para optimizar rendimiento en inferencias recurrentes
+# In-memory singletons to optimize latency across recurring inferences
 _default_embedding_manager: Optional[EmbeddingManager] = None
 _default_anomaly_detector: Optional[AnomalyDetector] = None
 _default_llm_explainer: Optional[LLMExplainer] = None
 
 def get_or_create_components():
-    """Garantiza la reutilización de componentes sin reinicializaciones costosas."""
+    """Ensures component reuse across calls without expensive reinitialization."""
     global _default_embedding_manager, _default_anomaly_detector, _default_llm_explainer
     if _default_embedding_manager is None:
         _default_embedding_manager = EmbeddingManager()
@@ -31,20 +31,20 @@ def process_transaction(
     fraud_rules: Optional[List[Dict[str, Any]]] = None
 ) -> Dict[str, Any]:
     """
-    Orquestador principal del pipeline de detección y explicabilidad de fraude:
-    1. Parseo y tipado de la transacción bancaria.
-    2. Vectorización densa semántica (Embedding).
-    3. Clasificación de anomalías (LLM + Heurística financiera calibrada).
-    4. Recuperación RAG por similitud coseno vectorial de reglas de riesgo.
-    5. Síntesis de justificación en lenguaje natural para analistas.
+    Core orchestrator of the fraud detection and explainability pipeline:
+    1. Parse and validate bank transaction data.
+    2. Dense semantic vectorization (Embedding generation).
+    3. Anomaly classification (LLM + Calibrated domain heuristics).
+    4. RAG semantic retrieval via cosine similarity across fraud rules.
+    5. Natural language rationale synthesis for human auditability.
     """
     try:
         transaction = Transaction(transaction_data)
     except Exception as e:
-        logger.error(f"Error al parsear los datos de la transacción: {e}")
-        return {'error': f"Datos de transacción inválidos: {e}"}
+        logger.error(f"Failed to parse transaction data: {e}")
+        return {'error': f"Invalid transaction data: {e}"}
 
-    # Cargar reglas con embeddings si no se proporcionan
+    # Load rules with embeddings if not passed
     if fraud_rules is None:
         fraud_rules = load_and_embed_rules()
 
@@ -53,10 +53,10 @@ def process_transaction(
 
     transaction_details_str = transaction.to_string_for_embedding()
 
-    # PASO 1: Generación de Vector de Embedding
+    # STEP 1: Generate Embedding Vector
     transaction_embedding = embedding_manager.get_embedding(transaction_details_str)
 
-    # PASO 2: Detección de Anomalías
+    # STEP 2: Anomaly Detection
     is_fraudulent = anomaly_detector.predict_fraud(transaction_embedding, transaction)
 
     return_data = transaction_data.copy()
@@ -68,11 +68,11 @@ def process_transaction(
 
     if is_fraudulent:
         logger.warning(
-            f"🚨 Transacción Sospechosa Detectada: ID {transaction.TransactionID} | "
-            f"Monto: ${transaction.TransactionAmount:.2f} | Cuenta: {transaction.AccountID}"
+            f"🚨 Suspicious Transaction Detected: ID {transaction.TransactionID} | "
+            f"Amount: ${transaction.TransactionAmount:.2f} | Account: {transaction.AccountID}"
         )
 
-        # PASO 3: Recuperación Semántica de Reglas (RAG con Similitud Coseno)
+        # STEP 3: Semantic Rule Retrieval (RAG with Cosine Similarity)
         fraud_context = rag_retriever.retrieve_context(
             transaction=transaction,
             transaction_embedding=transaction_embedding
@@ -83,7 +83,7 @@ def process_transaction(
         mitigation_steps = fraud_context.get('mitigation_steps', [])
         matched_rules_details = fraud_context.get('matched_rules_details', [])
 
-        # PASO 4: Generación de Explicación Técnica para Auditoría
+        # STEP 4: Technical Audit Explanation Synthesis
         explanation = llm_explainer.generate_explanation(transaction_details_str, fraud_context)
 
         return_data.update({
@@ -95,28 +95,27 @@ def process_transaction(
             'explanation': explanation,
         })
     else:
-        logger.info(f"✅ Transacción Normal: ID {transaction.TransactionID}")
+        logger.info(f"✅ Normal Transaction: ID {transaction.TransactionID}")
         return_data.update({
             'fraud_context': None,
             'detected_risk_level': "NONE",
             'detected_rule_tags': [],
             'mitigation_steps': [],
             'matched_rules_details': [],
-            'explanation': "Transacción dentro de los parámetros habituales de comportamiento.",
+            'explanation': "Transaction within normal behavioral parameters.",
         })
 
     return return_data
 
 if __name__ == "__main__":
-    import json
     logging.basicConfig(level=logging.INFO)
-    print("\n--- Ejecutando prueba de inferencia de transacción sospechosa ---")
+    print("\n--- Executing Suspicious Transaction Inference Demo ---")
     sample_transaction = {
         "TransactionID": "DEMO_TXN_001",
         "AccountID": "ACC_DEMO_99",
         "TransactionAmount": 3800.0,
         "TransactionDate": "2024-06-15 02:30:00",
-        "TransactionType": "Débito",
+        "TransactionType": "Debit",
         "Location": "Unknown",
         "DeviceID": "DEV_UNKNOWN",
         "IP Address": "10.0.0.12",
@@ -130,9 +129,9 @@ if __name__ == "__main__":
         "PreviousTransactionDate": "2024-06-14 10:00:00"
     }
     result = process_transaction(sample_transaction)
-    print("\nResultado del análisis:")
-    print(f"- Es Fraudulenta: {result['is_fraudulent']}")
-    print(f"- Nivel de Riesgo: {result['detected_risk_level']}")
-    print(f"- Tags: {result['detected_rule_tags']}")
-    print(f"- Mitigación: {result['mitigation_steps']}")
-    print(f"- Explicación: {result['explanation']}")
+    print("\nAnalysis Result:")
+    print(f"- Is Fraudulent: {result['is_fraudulent']}")
+    print(f"- Detected Risk Level: {result['detected_risk_level']}")
+    print(f"- Rule Tags: {result['detected_rule_tags']}")
+    print(f"- Mitigation Steps: {result['mitigation_steps']}")
+    print(f"- Technical Explanation: {result['explanation']}")

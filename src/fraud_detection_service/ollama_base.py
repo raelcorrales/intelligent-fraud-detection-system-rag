@@ -12,6 +12,9 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class OllamaBase:
+    """
+    Base abstraction client for local Ollama interactions with exponential backoff and jitter.
+    """
     def __init__(self, model_name: str, max_retries: int = 2, base_delay: float = 0.5):
         self.model_name = model_name
         self.max_retries = max_retries
@@ -21,14 +24,13 @@ class OllamaBase:
 
     def is_service_available(self) -> bool:
         """
-        Verifica de forma no bloqueante si el servicio Ollama responde localmente.
+        Non-blocking health probe checking if the local Ollama daemon is responsive.
         """
         if not OLLAMA_INSTALLED:
             return False
         if self._checked_availability:
             return self._is_available
         try:
-            # Consulta rápida con timeout implícito de httpx
             ollama.list()
             self._is_available = True
         except Exception:
@@ -38,10 +40,10 @@ class OllamaBase:
 
     def _resilience_wrapper(self, func: Callable[..., Any], *args, **kwargs) -> Any:
         """
-        Envuelve una llamada a Ollama con política de reintento exponencial con jitter.
+        Wraps an Ollama invocation with exponential backoff and random jitter retry policy.
         """
         if not OLLAMA_INSTALLED:
-            raise RuntimeError("El paquete 'ollama' no está instalado en el entorno.")
+            raise RuntimeError("The 'ollama' Python package is not installed in the environment.")
 
         last_exception = None
         for attempt in range(self.max_retries):
@@ -50,10 +52,10 @@ class OllamaBase:
             except Exception as e:
                 last_exception = e
                 logger.warning(
-                    f"Intento {attempt + 1}/{self.max_retries}: Error en '{func.__name__}': {e}"
+                    f"Attempt {attempt + 1}/{self.max_retries}: Error in '{func.__name__}': {e}"
                 )
                 if attempt == self.max_retries - 1:
-                    logger.error(f"Se agotaron los reintentos para '{func.__name__}'.")
+                    logger.error(f"Retries exhausted for '{func.__name__}'.")
                     raise e
                 delay = self.base_delay * (2 ** attempt) + random.uniform(0, 0.3)
                 time.sleep(delay)
@@ -62,15 +64,14 @@ class OllamaBase:
             raise last_exception
 
     def generate_request(self, prompt: str, options: Dict[str, Any]) -> Dict[str, Any]:
-        """Realiza una solicitud de generación con resiliencia."""
+        """Executes a text generation request with resilient retry handling."""
         def _call_generate():
             return ollama.generate(model=self.model_name, prompt=prompt, options=options)
         return self._resilience_wrapper(_call_generate)
 
     def embeddings_request(self, prompt: str) -> Dict[str, Any]:
-        """Realiza una solicitud de embeddings con resiliencia."""
+        """Executes an embedding vector request with resilient retry handling."""
         def _call_embeddings():
-            # Soporte compatible para ollama >= 0.5
             if hasattr(ollama, 'embed'):
                 try:
                     res = ollama.embed(model=self.model_name, input=prompt)
@@ -83,7 +84,7 @@ class OllamaBase:
         return self._resilience_wrapper(_call_embeddings)
 
     def chat_request(self, messages: list, options: Dict[str, Any]) -> Dict[str, Any]:
-        """Realiza una solicitud de chat con resiliencia."""
+        """Executes a chat completion request with resilient retry handling."""
         def _call_chat():
             return ollama.chat(model=self.model_name, messages=messages, options=options)
         return self._resilience_wrapper(_call_chat)

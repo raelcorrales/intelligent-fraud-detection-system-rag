@@ -34,13 +34,11 @@ def style_plot(fig_size=(10, 6), title=None, xlabel=None, ylabel=None):
     plt.yticks(fontsize=10)
     sns.despine()
 
-# %%
-BANK_TRANSACTIONS = os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname('main_app.py')))), 'data', 'bank_transactions_data_2.csv')
-FRAUD_RULES = os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname('main_app.py')))), 'data', 'fraud_rules.json')
+from src.config import BANK_TRANSACTIONS_PATH, FRAUD_RULES_PATH
 
 # %%
-df = pd.read_csv(BANK_TRANSACTIONS)
-json_rules = json.load(open(FRAUD_RULES, 'r'))
+df = pd.read_csv(BANK_TRANSACTIONS_PATH)
+json_rules = json.load(open(FRAUD_RULES_PATH, 'r', encoding='utf-8'))
 
 # %%
 style_plot(title='Distribution of Transaction Amounts', xlabel='Amount ($)', ylabel='Frequency')
@@ -273,9 +271,9 @@ processed_transactions = []
 output_filename = "processed_transactions_results.jsonl"
 
 # %%
-print(f"Iniciando procesamiento de {len(df)} transacciones...")
+print(f"Starting batch processing of {len(df)} transactions...")
 for i, transaction_data in enumerate(df.to_dict(orient='records')):
-    print(f"Procesando transacción {i+1}/{len(df)}: ID {transaction_data.get('TransactionID')}")
+    print(f"Processing transaction {i+1}/{len(df)}: ID {transaction_data.get('TransactionID')}")
     try:
         result = process_transaction(transaction_data=transaction_data, fraud_rules=json_rules)
         processed_transactions.append(result)
@@ -285,17 +283,14 @@ for i, transaction_data in enumerate(df.to_dict(orient='records')):
             f.write('\n')
 
     except Exception as e:
-        print(f"Error al procesar transacción {transaction_data.get('TransactionID')}: {e}")
+        print(f"Error processing transaction {transaction_data.get('TransactionID')}: {e}")
         processed_transactions.append({**transaction_data, 'error': str(e)})
     if i % 10 == 0:
-        print(f"Progreso: {i+1}/{len(df)} transacciones procesadas.")
-    # Terminar el bucle si se alcanza un número específico de transacciones
-    # cuando i sea 100 terminar el bucle
+        print(f"Progress: {i+1}/{len(df)} transactions processed.")
     if i >= 1000:
-        print("Procesamiento interrumpido después de 100 transacciones.")
+        print("Processing stopped after 1000 transactions.")
         break
-        
 
-print(f"Procesamiento completado. Resultados guardados en {output_filename}.")
+print(f"Processing complete. Results saved to {output_filename}.")
 
 

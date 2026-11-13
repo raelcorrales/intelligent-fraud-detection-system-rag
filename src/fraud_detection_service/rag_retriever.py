@@ -17,11 +17,11 @@ RISK_LEVEL_ORDER = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "NONE": 0}
 
 class RAGRetriever(OllamaBase):
     """
-    Recuperador RAG semántico para reglas de fraude financiero.
-    Combina:
-    1. Búsqueda vectorial por similitud coseno sobre embeddings densos.
-    2. Matching por heurísticas de dominio financiero estructuradas (grounding).
-    3. Clasificación de severidad y consolidación de mitigaciones operativas.
+    Semantic RAG retriever for financial fraud rules.
+    Combines:
+    1. Dense vector cosine similarity search over embedding representations.
+    2. Structured domain heuristic checks for grounded auditability.
+    3. Severity level ranking and operational mitigation step consolidation.
     """
     def __init__(
         self,
@@ -39,7 +39,7 @@ class RAGRetriever(OllamaBase):
 
     @staticmethod
     def cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
-        """Calcula la similitud coseno entre dos vectores numéricos."""
+        """Calculates cosine similarity between two numerical vectors."""
         norm_a = np.linalg.norm(vec_a)
         norm_b = np.linalg.norm(vec_b)
         if norm_a == 0 or norm_b == 0:
@@ -52,11 +52,11 @@ class RAGRetriever(OllamaBase):
         transaction_embedding: Optional[np.ndarray] = None
     ) -> Dict[str, Any]:
         """
-        Recupera el contexto semántico de reglas de fraude más afines a la transacción.
+        Retrieves the semantic context of fraud rules most relevant to the given transaction.
         """
         matched_rules = []
 
-        # 1. Búsqueda Vectorial por Similitud Coseno
+        # 1. Vector Search via Cosine Similarity
         if transaction_embedding is not None:
             scored_rules = []
             for rule in self.fraud_rules:
@@ -73,7 +73,7 @@ class RAGRetriever(OllamaBase):
                     rule_copy["similarity_score"] = round(score, 4)
                     matched_rules.append(rule_copy)
 
-        # 2. Reglas Financieras Estructuradas de Dominio (Grounding de Auditoría)
+        # 2. Structured Financial Domain Rules (Auditing Grounding)
         tx_str = transaction.to_string_for_embedding().lower()
         amt = getattr(transaction, "TransactionAmount", 0.0)
         bal = getattr(transaction, "AccountBalance", 0.0)
@@ -84,28 +84,28 @@ class RAGRetriever(OllamaBase):
             rid = rule.get("id", "")
             triggered = False
 
-            # Vaciado de cuenta
+            # Account balance depletion
             if rid == "RULE_006_LARGE_PERCENTAGE_OF_ACCOUNT_BALANCE" and bal > 0 and (amt / bal) > 0.70:
                 triggered = True
-            # Intentos fallidos de autenticación
+            # Authentication brute force attempts
             elif rid == "RULE_003_MULTIPLE_FAILED_LOGIN_ATTEMPTS" and logins >= 3:
                 triggered = True
-            # Alto valor o categoría inusual
+            # High transaction value or unusual luxury spending
             elif rid == "RULE_001_HIGH_VALUE_UNUSUAL_CATEGORY" and amt >= 2000:
                 triggered = True
-            # Dispositivo desconocido
+            # Unrecognized device
             elif rid == "RULE_005_UNUSUAL_DEVICE_OR_CHANNEL" and "unknown" in device:
                 triggered = True
-            # Coincidencia por keywords
+            # Keyword matching fallback
             elif any(kw.lower() in tx_str for kw in rule.get("keywords", [])):
                 triggered = True
 
             if triggered and rid not in [r.get("id") for r in matched_rules]:
                 rule_copy = rule.copy()
-                rule_copy["similarity_score"] = 0.85  # Score alto para reglas de negocio directas
+                rule_copy["similarity_score"] = 0.85  # High confidence score for direct rule triggers
                 matched_rules.append(rule_copy)
 
-        # Desduplicación preservando mayor score
+        # Deduplicate preserving highest confidence score
         deduped = {}
         for r in matched_rules:
             rid = r.get("id")
@@ -139,16 +139,16 @@ class RAGRetriever(OllamaBase):
                     }
                     for r in matched_rules
                 ],
-                "explanation_base": f"Activación semántica y de negocio de {len(matched_rules)} regla(s) de riesgo."
+                "explanation_base": f"Semantic and domain activation of {len(matched_rules)} risk rule(s)."
             }
 
-        # 3. Fallback general para alertas sin regla directa
+        # 3. General fallback for anomalies without direct rule mapping
         return {
             "matched_rule_ids": [],
             "risk_level": "HIGH",
             "tags": ["anomalous-behavior", "risk-mitigation"],
-            "rule_descriptions": ["Patrón transaccional atípico respecto al perfil demográfico o de cuenta."],
-            "mitigation_steps": ["Poner la transacción en revisión manual y solicitar MFA."],
+            "rule_descriptions": ["Atypical transactional pattern relative to account or demographic profile."],
+            "mitigation_steps": ["Place transaction on manual review and enforce MFA verification."],
             "matched_rules_details": [],
-            "explanation_base": "Anomalía detectada sin regla específica directa."
+            "explanation_base": "Anomaly detected without direct rule matching."
         }

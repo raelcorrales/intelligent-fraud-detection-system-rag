@@ -12,7 +12,7 @@ _cached_rules: Optional[List[Dict[str, Any]]] = None
 _embedding_manager: Optional[EmbeddingManager] = None
 
 def get_embedding_manager_instance(model_name: str = EMBEDDING_MODEL_NAME) -> EmbeddingManager:
-    """Retorna una instancia singleton de EmbeddingManager."""
+    """Returns a singleton instance of EmbeddingManager."""
     global _embedding_manager
     if _embedding_manager is None:
         _embedding_manager = EmbeddingManager(model_name=model_name)
@@ -24,8 +24,8 @@ def load_and_embed_rules(
     force_reload: bool = False
 ) -> List[Dict[str, Any]]:
     """
-    Carga las reglas de fraude desde el archivo JSON y calcula/adjunta
-    un vector de embedding normalizado para cada regla para habilitar RAG semántico real.
+    Loads fraud rules from the JSON catalog and attaches normalized embedding
+    vectors for each rule to power real vector-based semantic RAG retrieval.
     """
     global _cached_rules
     if _cached_rules is not None and not force_reload:
@@ -34,29 +34,29 @@ def load_and_embed_rules(
     path = Path(rules_file_path) if rules_file_path else FRAUD_RULES_PATH
 
     if not path.exists():
-        logger.error(f"El archivo de reglas no existe en: {path}")
+        logger.error(f"Fraud rules file not found at: {path}")
         return []
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             raw_rules = json.load(f)
     except Exception as e:
-        logger.error(f"Error al leer reglas de {path}: {e}")
+        logger.error(f"Failed to read rules from {path}: {e}")
         return []
 
     manager = get_embedding_manager_instance(model_name=model_name)
     embedded_rules = []
 
-    logger.info(f"Generando embeddings vectoriales para {len(raw_rules)} reglas de fraude...")
+    logger.info(f"Generating dense embedding vectors for {len(raw_rules)} fraud rules...")
     for rule in raw_rules:
         rule_copy = rule.copy()
         keywords_str = ", ".join(rule.get("keywords", []))
         tags_str = ", ".join(rule.get("tags", []))
         
-        # Representación textual enriquecida para similitud semántica
+        # Enriched semantic representation for cosine similarity
         rule_text = (
-            f"Regla: {rule.get('id', '')}. Descripción: {rule.get('description', '')}. "
-            f"Palabras clave: {keywords_str}. Tags: {tags_str}."
+            f"Rule: {rule.get('id', '')}. Description: {rule.get('description', '')}. "
+            f"Keywords: {keywords_str}. Tags: {tags_str}."
         )
         embedding = manager.get_embedding(rule_text)
         rule_copy["embedding"] = embedding
@@ -64,5 +64,5 @@ def load_and_embed_rules(
         embedded_rules.append(rule_copy)
 
     _cached_rules = embedded_rules
-    logger.info(f"Embeddings de reglas listos y cacheados exitosamente.")
+    logger.info("Rule embeddings successfully computed and cached in memory.")
     return embedded_rules

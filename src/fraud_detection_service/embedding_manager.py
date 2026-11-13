@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingManager(OllamaBase):
     """
-    Gestor de embeddings para el sistema de detección de fraude.
-    Genera representaciones vectoriales densas utilizando Ollama (nomic-embed-text u otro),
-    con fallback determinista en caso de que el daemon local no esté activo.
+    Embedding manager for the fraud detection system.
+    Generates dense vector representations using Ollama (nomic-embed-text or others),
+    with deterministic fallback when the local daemon is unavailable.
     """
     def __init__(
         self,
@@ -26,14 +26,14 @@ class EmbeddingManager(OllamaBase):
 
     def _fallback_deterministic_embedding(self, text: str) -> np.ndarray:
         """
-        Genera un embedding denso normalizado (L2) basado en hashing criptográfico
-        para garantizar continuidad en tests y entornos sin daemon de Ollama activo.
+        Generates a dense normalized (L2) embedding based on cryptographic hashing
+        to guarantee continuity in tests and environments without an active Ollama daemon.
         """
         words = text.lower().split()
         vec = np.zeros(self.dimension, dtype=np.float32)
 
         for i, word in enumerate(words):
-            # Seed reproducible por palabra
+            # Reproducible per-word seed
             h = int(hashlib.sha256(word.encode('utf-8')).hexdigest()[:8], 16)
             idx = h % self.dimension
             sign = 1.0 if (h % 2 == 0) else -1.0
@@ -48,8 +48,8 @@ class EmbeddingManager(OllamaBase):
 
     def get_embedding(self, text: str) -> np.ndarray:
         """
-        Obtiene el vector de embedding de un texto.
-        Prioriza Ollama y conmuta de forma transparente al fallback determinista si no está accesible.
+        Retrieves the embedding vector for a given text.
+        Prioritizes Ollama and seamlessly falls back to deterministic vectorization if offline.
         """
         if not text:
             return np.zeros(self.dimension, dtype=np.float32)
@@ -64,6 +64,6 @@ class EmbeddingManager(OllamaBase):
                         emb = emb / norm
                     return emb
             except Exception as e:
-                logger.warning(f"Ollama embedding falló ({e}). Usando fallback semántico determinista.")
+                logger.warning(f"Ollama embedding request failed ({e}). Employing deterministic fallback.")
 
         return self._fallback_deterministic_embedding(text)

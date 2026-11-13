@@ -1,4 +1,4 @@
-# Sistema Inteligente de Detección de Fraudes con RAG y LLM Local
+# Intelligent Financial Fraud Detection System with Vector RAG & Local LLM
 
 [![Release](https://img.shields.io/badge/Release-v0.1.0-blue.svg)](https://github.com/raelcorrales/intelligent-fraud-detection-system-rag/releases/tag/v0.1.0)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-green.svg)](https://python.org)
@@ -6,115 +6,116 @@
 [![Ollama](https://img.shields.io/badge/Ollama-Local_Inference-orange.svg)](https://ollama.com)
 [![Tests](https://img.shields.io/badge/Tests-Pytest_Passing-success.svg)](tests/)
 
-Sistema end-to-end de **detección de fraudes financieros y explicabilidad auditable** combinando recuperación semántica vectorial (**RAG** con similitud coseno), modelos de lenguaje local (**Ollama**), APIs REST fuertemente tipadas (**FastAPI**) y paneles de control analíticos (**Streamlit**).
+An end-to-end system for **financial fraud detection and auditable explainability**, combining dense semantic vector retrieval (**RAG** with cosine similarity), local large language models (**Ollama**), strongly typed REST APIs (**FastAPI**), and interactive analytics dashboards (**Streamlit**).
 
-> Desarrollado por **Rael Corrales** · Python Engineer & Data Specialist
+> Developed by **Rael Corrales** · Python Engineer & Data Specialist
 
 -----
 
-## 🏗️ Arquitectura del Sistema
+## 🏗️ System Architecture
 
-El pipeline procesa transacciones bancarias mediante una arquitectura híbrida de alta resiliencia diseñada para privacidad bancaria y baja latencia:
+The pipeline processes banking transactions via a high-resilience hybrid architecture designed for data sovereignty, low latency, and zero-hallucination compliance:
 
 ```mermaid
 flowchart TD
-    TX["Transacción Bancaria (JSON/REST)"] --> VAL["Validación Pydantic V2\n(TransactionSchema)"]
-    VAL --> EMB["Vectorización Densa\n(EmbeddingManager / 768d)"]
+    TX["Bank Transaction (JSON/REST)"] --> VAL["Pydantic V2 Validation\n(TransactionSchema)"]
+    VAL --> EMB["Dense Vectorization\n(EmbeddingManager / 768d)"]
     
-    subgraph Core["Motor de Detección & RAG"]
-        EMB --> DET["Detector de Anomalías\n(Heurística Financiera + LLM Ollama)"]
-        DET -->|Sospechosa| RAG["RAG Semántico Vectorial\n(Similitud Coseno vs Reglas)"]
-        DET -->|Normal| NORM["Clasificación NORMAL\n(Risk: NONE)"]
-        RAG --> EXP["Generador de Explicaciones\n(LLMExplainer + Prompt Grounding)"]
+    subgraph Core["Detection Engine & RAG"]
+        EMB --> DET["Anomaly Detector\n(Financial Heuristics + Local LLM)"]
+        DET -->|Suspicious| RAG["Vector Semantic RAG\n(Cosine Similarity vs Rules)"]
+        DET -->|Normal| NORM["NORMAL Classification\n(Risk: NONE)"]
+        RAG --> EXP["Audit Explainer\n(LLMExplainer + Grounded Prompt)"]
     end
 
-    EXP --> RES["Respuesta Auditable (JSON)\n- Risk Level\n- Tags & Reglas\n- Mitigaciones\n- Explicación Técnica"]
+    EXP --> RES["Auditable Output (JSON)\n- Risk Level\n- Tags & Matched Rules\n- Actionable Mitigations\n- Technical Explanation"]
     NORM --> RES
-    RES --> UI["Dashboard Streamlit / Consumo API"]
+    RES --> UI["Streamlit Dashboard / API Client"]
 ```
 
 -----
 
-## 🚀 Características Principales
+## 🚀 Key Features
 
-- **Embeddings Semánticos Reales**: Representación vectorial densa (768 dimensiones) de transacciones y reglas de negocio, con normalización $L_2$.
-- **RAG con Similitud Coseno**: Búsqueda vectorial real ($\text{cosine similarity} \ge \tau$) sobre el catálogo de reglas bancarias (`fraud_rules.json`), asegurando justificaciones sin alucinaciones.
-- **Detección Resiliente Híbrida**: Razonamiento con LLM local (`llama3.1` / `llama3.2`) complementado con heurísticas financieras calibradas (ratios de balance, ataques de fuerza bruta y tiempos atípicos).
-- **Tolerancia a Fallos & Backoff Exponencial**: Capa [`OllamaBase`](src/fraud_detection_service/ollama_base.py) con reintentos exponenciales con jitter y fallbacks estructurados para máxima disponibilidad.
-- **API REST con FastAPI**: Endpoints `/process-transaction/` y `/health` con contratos de validación estrictos vía Pydantic V2 y documentación OpenAPI interactiva (`/docs`).
-- **Dashboard de Ciberseguridad**: Interfaz en Streamlit con KPIs transaccionales, mapa coroplético por estado (USA), hotspots de IPs y dispositivos, y reducción de dimensionalidad con **t-SNE**.
+- **Dense Semantic Embeddings**: Normalized ($L_2$) 768-dimensional dense representations for transactions and business rules using local embedding models (`nomic-embed-text`).
+- **Cosine Similarity RAG**: Real vector similarity retrieval ($\text{cosine similarity} \ge \tau$) over structured fraud rules (`fraud_rules.json`), ensuring grounded audit justifications.
+- **Resilient Hybrid Detection**: Semantic reasoning via local LLM (`llama3.1` / `llama3.2`) paired with calibrated financial heuristics (account balance draining, brute-force login surges, and atypical execution speeds).
+- **Fault-Tolerant Infrastructure**: Exponential backoff with random jitter in [`OllamaBase`](src/fraud_detection_service/ollama_base.py) with deterministic offline fallbacks for high availability.
+- **Production REST API**: FastAPI endpoints (`/process-transaction/` and `/health`) enforced by strict Pydantic V2 contracts with interactive OpenAPI documentation (`/docs`).
+- **Cybersecurity Analytics Dashboard**: Streamlit interface with transactional KPIs, USA state choropleth risk map, IP/device anomaly hotspots, and **t-SNE** high-dimensional cluster visualization.
 
 -----
 
-## 📁 Estructura del Proyecto
+## 📁 Repository Structure
 
 ```
 fraudai_project/
 ├── data/
-│   ├── bank_transactions_data_2.csv    # Dataset bancario de Kaggle
-│   ├── fraud_rules.json                # Catálogo de reglas de fraude estructuradas
-│   └── processed_transactions.jsonl    # Salida por lotes procesada
+│   ├── bank_transactions_data_2.csv    # Kaggle banking transactions dataset
+│   ├── fraud_rules.json                # Structured fraud rules catalog
+│   └── processed_transactions.jsonl    # Batch processed results
 ├── src/
-│   ├── config.py                       # Configuración unificada de modelos y rutas
-│   ├── transaction.py                  # Entidad de dominio Transaction
-│   ├── process_function.py             # Orquestador del pipeline de inferencia
-│   ├── app_fraude.py                   # Dashboard analítico de Streamlit
+│   ├── config.py                       # Centralized configuration and model settings
+│   ├── transaction.py                  # Transaction domain entity
+│   ├── process_function.py             # Inference pipeline orchestrator
+│   ├── app_fraude.py                   # Streamlit analytics dashboard
 │   └── fraud_detection_service/
-│       ├── ollama_base.py              # Cliente base resiliente con reintentos y jitter
-│       ├── embedding_manager.py        # Generación y normalización de embeddings
-│       ├── embedding_rule_utils.py     # Vectorización y caching en memoria de reglas
-│       ├── anomaly_detector.py         # Detección de fraude (LLM + Heurística)
-│       ├── rag_retriever.py            # Búsqueda vectorial RAG por similitud coseno
-│       └── llm_explainer.py            # Síntesis de explicaciones en lenguaje natural
+│       ├── ollama_base.py              # Resilient base client with retries and jitter
+│       ├── embedding_manager.py        # Vector embedding generation and normalization
+│       ├── embedding_rule_utils.py     # Rule embedding vectorization and caching
+│       ├── anomaly_detector.py         # Fraud anomaly detection (LLM + Heuristics)
+│       ├── rag_retriever.py            # Vector RAG retriever with cosine similarity
+│       └── llm_explainer.py            # Natural language audit report synthesizer
 ├── tests/
-│   └── test_pipeline.py                # Suite completa de tests unitarios (pytest)
-├── main_api.py                         # API REST de producción con FastAPI
-├── requirements.txt                    # Dependencias del proyecto
+│   └── test_pipeline.py                # Automated test suite (pytest)
+├── main_api.py                         # Production REST API with FastAPI
+├── requirements.txt                    # Project dependencies
+├── CHANGELOG.md                        # Historical release changelog
 └── README.md
 ```
 
 -----
 
-## ⚙️ Puesta en Marcha Rápida
+## ⚙️ Quick Start
 
-### 1. Instalación de Dependencias
+### 1. Install Dependencies
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-### 2. Configuración de Modelos (Opcional si usas Ollama local)
+### 2. Configure Models (Optional if running local Ollama)
 
-Si cuentas con Ollama instalado, descarga los modelos recomendados:
+If Ollama is installed on your machine, pull the recommended models:
 
 ```bash
 ollama pull nomic-embed-text
 ollama pull llama3.1
 ```
 
-> **Nota de Resiliencia**: Si Ollama no está en ejecución, el sistema activa automáticamente sus fallbacks semánticos y deterministas sin interrumpir la operación ni arrojar excepciones no controladas.
+> **Offline Resilience Note**: If Ollama is not running, the system automatically activates deterministic vector and explanation fallbacks without crashing or raising unhandled exceptions.
 
-### 3. Ejecución de Tests Automatizados
+### 3. Run Automated Tests
 
 ```bash
 python -m pytest tests/test_pipeline.py -v
 ```
 
-### 4. Prueba Rápida por Consola (CLI)
+### 4. Run CLI Demo
 
 ```bash
 python -m src.process_function
 ```
 
-### 5. Levantar la API REST
+### 5. Launch REST API
 
 ```bash
 python -m uvicorn main_api:app --reload --port 8000
 ```
-- Documentación Swagger interactiva: [http://localhost:8000/docs](http://localhost:8000/docs)
-- Health check: [http://localhost:8000/health](http://localhost:8000/health)
+- Interactive Swagger docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Health probe: [http://localhost:8000/health](http://localhost:8000/health)
 
-### 6. Levantar el Dashboard de Streamlit
+### 6. Launch Streamlit Dashboard
 
 ```bash
 python -m streamlit run src/app_fraude.py
@@ -122,9 +123,9 @@ python -m streamlit run src/app_fraude.py
 
 -----
 
-## 📦 Ejemplo de Respuesta API
+## 📦 Sample API Response
 
-Petición a `POST /process-transaction/`:
+Request to `POST /process-transaction/`:
 
 ```json
 {
@@ -134,17 +135,17 @@ Petición a `POST /process-transaction/`:
   "detected_risk_level": "CRITICAL",
   "detected_rule_tags": ["financial", "authentication", "account_takeover"],
   "mitigation_steps": [
-    "Requerir verificación multifactor (MFA).",
-    "Bloquear cuenta temporalmente.",
-    "Contactar al cliente a través de un canal seguro."
+    "Require multi-factor authentication (MFA).",
+    "Temporarily lock account.",
+    "Contact customer via secure channel."
   ],
-  "explanation": "Alerta de Fraude (CRITICAL): La transacción presenta patrones sospechosos etiquetados como [financial, authentication, account_takeover]. Fundamento de auditoría: Transacciones de monto significativamente alto en una categoría inusual y consumo de más del 70% del balance de la cuenta tras múltiples intentos de login.",
+  "explanation": "Fraud Alert (CRITICAL): Transaction exhibits anomalous patterns tagged as [financial, authentication, account_takeover]. Audit rationale: A transaction consumes a very high proportion of the current account balance following multiple failed login attempts.",
   "matched_rules_details": [
     {
       "id": "RULE_006_LARGE_PERCENTAGE_OF_ACCOUNT_BALANCE",
       "risk_level": "CRITICAL",
       "similarity_score": 0.85,
-      "description": "Una transacción consume una proporción muy alta del balance actual de la cuenta..."
+      "description": "A transaction consumes a very high proportion of the current account balance..."
     }
   ],
   "transaction_embedding_shape": [768]
@@ -153,6 +154,6 @@ Petición a `POST /process-transaction/`:
 
 -----
 
-## 📄 Licencia y Autores
+## 📄 License & Author
 
-Proyecto desarrollado con fines demostrativos y de arquitectura por **Rael Corrales**. Código bajo licencia MIT.
+Developed for architectural and demonstration purposes by **Rael Corrales**. Code released under the MIT License.

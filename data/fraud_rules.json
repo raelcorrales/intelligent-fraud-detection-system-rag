@@ -1,108 +1,108 @@
 [
   {
     "id": "RULE_001_HIGH_VALUE_UNUSUAL_CATEGORY",
-    "description": "Transacciones de monto significativamente alto en una categoría de comercio que es atípica para el historial de gasto del cliente o su perfil ocupacional/demográfico. Este patrón a menudo se asocia con el vaciamiento de cuentas o compras no autorizadas de bienes de alto valor.",
-    "keywords": ["monto alto", "categoría inusual", "compra de lujo", "patrón de gasto", "vaciamiento de cuenta"],
+    "description": "Significantly high transaction amount in a merchant category that is atypical for the customer's spending history or occupational/demographic profile. Often associated with account draining or unauthorized high-value purchases.",
+    "keywords": ["high amount", "unusual category", "luxury purchase", "spending pattern", "account draining"],
     "risk_level": "CRITICAL",
     "mitigation_steps": [
-      "Bloquear transacción y contactar al cliente inmediatamente.",
-      "Requerir verificación multifactor (MFA).",
-      "Alertar a equipo de fraude para revisión manual."
+      "Block transaction and contact customer immediately.",
+      "Require multi-factor authentication (MFA).",
+      "Alert fraud investigation team for manual review."
     ],
     "tags": ["financial", "behavioral"]
   },
   {
     "id": "RULE_002_GEOGRAPHIC_LOCATION_MISMATCH",
-    "description": "La transacción se origina desde una ubicación geográfica (país, ciudad, IP) que no coincide con los patrones de viaje conocidos del cliente o con su ubicación habitual. Esto es común en fraudes de 'card-not-present' o toma de control de cuenta.",
-    "keywords": ["ubicación inusual", "IP extranjera", "viaje no notificado", "fraude CNP", "toma de cuenta"],
+    "description": "The transaction originates from a geographical location (country, city, IP) that does not match known travel patterns of the customer or their usual location. Common in card-not-present fraud or account takeover.",
+    "keywords": ["unusual location", "foreign IP", "unnotified travel", "CNP fraud", "account takeover"],
     "risk_level": "HIGH",
     "mitigation_steps": [
-      "Solicitar confirmación de viaje.",
-      "Bloquear la transacción hasta la verificación.",
-      "Monitorear transacciones subsiguientes."
+      "Request travel confirmation.",
+      "Block transaction pending verification.",
+      "Monitor subsequent transactions."
     ],
     "tags": ["geolocation", "behavioral", "account_takeover"]
   },
   {
     "id": "RULE_003_MULTIPLE_FAILED_LOGIN_ATTEMPTS",
-    "description": "La transacción exitosa es precedida por un número excesivo de intentos de inicio de sesión fallidos, lo que sugiere un ataque de fuerza bruta o de credenciales robadas para acceder a la cuenta.",
-    "keywords": ["intentos fallidos", "login repetido", "fuerza bruta", "credenciales robadas", "toma de cuenta"],
+    "description": "The successful transaction is preceded by an excessive number of failed login attempts, suggesting a brute force attack or stolen credentials used to access the account.",
+    "keywords": ["failed attempts", "repeated login", "brute force", "stolen credentials", "account takeover"],
     "risk_level": "HIGH",
     "mitigation_steps": [
-      "Bloquear cuenta temporalmente.",
-      "Requerir restablecimiento de contraseña.",
-      "Contactar al cliente a través de un canal seguro."
+      "Temporarily lock account.",
+      "Require password reset.",
+      "Contact customer via secure channel."
     ],
     "tags": ["authentication", "account_takeover"]
   },
   {
     "id": "RULE_004_SHORT_TRANSACTION_DURATION_AFTER_LOGIN_SPIKE",
-    "description": "Una transacción de alto valor se completa en un tiempo extremadamente corto después de un login, especialmente si este login también fue anómalo (ej. desde una nueva IP o dispositivo). Esto puede indicar uso de bots o acceso no autorizado altamente eficiente.",
-    "keywords": ["duración corta", "login rápido", "bot", "toma de control", "transacción exprés"],
+    "description": "A high-value transaction is completed in an extremely short duration following login, especially if login was anomalous (e.g. from new IP or device). May indicate bot automation or scripted unauthorized access.",
+    "keywords": ["short duration", "rapid login", "bot", "takeover", "express transaction"],
     "risk_level": "CRITICAL",
     "mitigation_steps": [
-      "Bloquear transacción.",
-      "Realizar investigación forense sobre la sesión.",
-      "Notificar al cliente."
+      "Block transaction.",
+      "Conduct forensic session investigation.",
+      "Notify customer."
     ],
     "tags": ["behavioral", "technical", "account_takeover"]
   },
   {
     "id": "RULE_005_UNUSUAL_DEVICE_OR_CHANNEL",
-    "description": "La transacción se realiza utilizando un dispositivo (ej. un nuevo dispositivo móvil) o un canal (ej. centro de llamadas inusual) que no se ha visto anteriormente asociado a esta cuenta o al patrón de comportamiento del cliente.",
-    "keywords": ["dispositivo nuevo", "canal inusual", "acceso no autorizado", "teléfono de fraude", "dispositivo clonado"],
+    "description": "The transaction is executed using a device (e.g. new mobile device) or channel (e.g. anomalous call center channel) not previously associated with this account or customer behavioral pattern.",
+    "keywords": ["new device", "unusual channel", "unauthorized access", "fraud phone", "cloned device"],
     "risk_level": "MEDIUM",
     "mitigation_steps": [
-      "Enviar alerta de verificación a dispositivo principal.",
-      "Requerir autenticación adicional.",
-      "Marcar dispositivo para monitoreo."
+      "Send verification alert to primary device.",
+      "Require additional authentication.",
+      "Flag device for monitoring."
     ],
     "tags": ["device", "channel", "behavioral"]
   },
   {
     "id": "RULE_006_LARGE_PERCENTAGE_OF_ACCOUNT_BALANCE",
-    "description": "Una transacción (especialmente una transferencia o retiro) consume una proporción muy alta del balance actual de la cuenta, lo que podría indicar un intento de vaciar la cuenta de forma rápida.",
-    "keywords": ["vaciar cuenta", "alto porcentaje de balance", "retiro masivo", "transferencia grande"],
+    "description": "A transaction (especially transfer or withdrawal) consumes a very high proportion of the current account balance, indicating a potential attempt to rapidly drain funds.",
+    "keywords": ["drain account", "high balance percentage", "massive withdrawal", "large transfer"],
     "risk_level": "CRITICAL",
     "mitigation_steps": [
-      "Poner la transacción en espera para revisión manual.",
-      "Contactar al cliente para verificar la intención.",
-      "Limitar monto de transacción diaria/mensual."
+      "Place transaction on hold for manual review.",
+      "Contact customer to verify intent.",
+      "Limit daily/monthly transaction amount."
     ],
     "tags": ["financial", "behavioral"]
   },
   {
     "id": "RULE_007_INTERNATIONAL_TRANSACTION_NO_TRAVEL_NOTIFICATION",
-    "description": "Una transacción internacional es detectada sin que el cliente haya notificado a su banco sobre un viaje a ese país. Esto es un indicador común de fraude con tarjeta robada o clonada.",
-    "keywords": ["transacción internacional", "no viaje notificado", "tarjeta robada", "clonación", "compra en el extranjero"],
+    "description": "An international transaction is detected without prior customer travel notification to the bank. Common indicator of card cloning or stolen card fraud.",
+    "keywords": ["international transaction", "unnotified travel", "stolen card", "card cloning", "foreign purchase"],
     "risk_level": "HIGH",
     "mitigation_steps": [
-      "Bloquear transacción si no hay notificación.",
-      "Contactar al cliente para verificar el viaje.",
-      "Requerir verificación de identidad."
+      "Block transaction if no travel notice exists.",
+      "Contact customer to verify travel.",
+      "Require identity verification."
     ],
     "tags": ["geolocation", "financial"]
   },
   {
     "id": "RULE_008_SUDDEN_CHANGE_IN_SPENDING_HABITS",
-    "description": "Una desviación abrupta del patrón de gasto habitual del cliente (ej. un cliente que solo hace pequeñas compras de comestibles de repente realiza una compra de arte de alto valor).",
-    "keywords": ["cambio de patrón", "gasto atípico", "compra inusual", "desviación de perfil"],
+    "description": "An abrupt deviation from the customer's habitual spending pattern (e.g. a customer making small retail purchases suddenly buying high-value luxury goods).",
+    "keywords": ["pattern shift", "atypical spending", "unusual purchase", "profile deviation"],
     "risk_level": "MEDIUM",
     "mitigation_steps": [
-      "Enviar alerta de confirmación al cliente.",
-      "Revisar el historial de transacciones para identificar la anomalía.",
-      "Monitorear transacciones futuras de cerca."
+      "Send confirmation alert to customer.",
+      "Review transaction history to identify anomaly.",
+      "Closely monitor future transactions."
     ],
     "tags": ["behavioral", "financial"]
   },
   {
     "id": "RULE_009_TRANSACTION_AT_UNUSUAL_HOURS",
-    "description": "La transacción ocurre en horas que son atípicas para la actividad del cliente (ej. madrugada para alguien que no trabaja en turnos nocturnos) o para el comercio.",
-    "keywords": ["horas inusuales", "madrugada", "fuera de horario", "comportamiento nocturno"],
+    "description": "The transaction occurs at hours atypical for customer activity (e.g. late night / early morning for non-nightshift workers) or for the merchant.",
+    "keywords": ["unusual hours", "late night", "off-hours", "overnight activity"],
     "risk_level": "LOW",
     "mitigation_steps": [
-      "Marcar para revisión posterior si se combina con otros indicadores.",
-      "Ajustar umbrales de alerta para este patrón."
+      "Flag for subsequent review if combined with other indicators.",
+      "Adjust alert thresholds for this pattern."
     ],
     "tags": ["behavioral", "timing"]
   }

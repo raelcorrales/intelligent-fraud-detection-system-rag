@@ -17,7 +17,7 @@ def sample_normal_transaction_data():
         "AccountID": "ACC_100",
         "TransactionAmount": 45.0,
         "TransactionDate": "2024-05-10 12:00:00",
-        "TransactionType": "Débito",
+        "TransactionType": "Debit",
         "Location": "New York",
         "DeviceID": "DEV_US_1",
         "IP Address": "192.168.1.10",
@@ -38,7 +38,7 @@ def sample_fraud_transaction_data():
         "AccountID": "ACC_200",
         "TransactionAmount": 4200.0,
         "TransactionDate": "2024-05-10 03:15:00",
-        "TransactionType": "Débito",
+        "TransactionType": "Debit",
         "Location": "Unknown",
         "DeviceID": "DEV_UNKNOWN",
         "IP Address": "10.0.0.99",
@@ -48,7 +48,7 @@ def sample_fraud_transaction_data():
         "CustomerOccupation": "Student",
         "TransactionDuration": 10,
         "LoginAttempts": 4,
-        "AccountBalance": 4500.0,  # Vaciado del 93% de la cuenta
+        "AccountBalance": 4500.0,  # 93% account balance depletion
         "PreviousTransactionDate": "2024-05-01 10:00:00"
     }
 
@@ -62,10 +62,10 @@ def test_transaction_model(sample_normal_transaction_data):
 
 def test_embedding_manager():
     manager = EmbeddingManager(dimension=768)
-    emb = manager.get_embedding("Prueba de vectorización de transacción bancaria")
+    emb = manager.get_embedding("Banking transaction vectorization test prompt")
     assert isinstance(emb, np.ndarray)
     assert emb.shape == (768,)
-    # Verificar normalización unitaria (L2 norm ~ 1.0)
+    # Verify unitary L2 normalization
     norm = np.linalg.norm(emb)
     assert pytest.approx(norm, 0.01) == 1.0
 
@@ -106,13 +106,13 @@ def test_anomaly_detector_classification(sample_normal_transaction_data, sample_
     assert is_fraud_suspicious is True
 
 def test_process_transaction_end_to_end(sample_fraud_transaction_data, sample_normal_transaction_data):
-    # Transacción sospechosa
+    # Suspicious transaction execution
     result_fraud = process_transaction(sample_fraud_transaction_data)
     assert result_fraud["is_fraudulent"] is True
     assert result_fraud["detected_risk_level"] in ["CRITICAL", "HIGH", "MEDIUM"]
     assert len(result_fraud["explanation"]) > 0
 
-    # Transacción normal
+    # Normal transaction execution
     result_normal = process_transaction(sample_normal_transaction_data)
     assert result_normal["is_fraudulent"] is False
     assert result_normal["detected_risk_level"] == "NONE"
@@ -129,14 +129,14 @@ def test_fastapi_endpoints(sample_normal_transaction_data, sample_fraud_transact
     assert resp_health.status_code == 200
     assert resp_health.json()["status"] == "healthy"
 
-    # 2. Inferencia POST normal
+    # 2. Normal POST inference
     resp_norm = client.post("/process-transaction/", json=sample_normal_transaction_data)
     assert resp_norm.status_code == 200
     json_norm = resp_norm.json()
     assert json_norm["is_fraudulent"] is False
     assert json_norm["detected_risk_level"] == "NONE"
 
-    # 3. Inferencia POST fraude
+    # 3. Fraud POST inference
     resp_fraud = client.post("/process-transaction/", json=sample_fraud_transaction_data)
     assert resp_fraud.status_code == 200
     json_fraud = resp_fraud.json()
